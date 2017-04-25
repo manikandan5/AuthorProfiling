@@ -20,13 +20,16 @@ if db.collection.count() < lookupTweets():
 else:
     print("Hello world", lookupTweets())
     # Partition in to Training and Test Set for gender.
-    data = [db["StatusID"]+"---"+db["Sex"] for db in db.collection.find()]
+    data = [db["StatusID"] + "-GENDER-" + db["Sex"] for db in db.collection.find()]
     random.shuffle(data)
+    train_data = data[:int((len(data) + 1) * .80)]
+    test_data = data[int(len(data) * .80 + 1):]
+    print(len(test_data))
+    train_data = train_data[:50]
+    test_data = test_data[:50]
 
-    train_data = data[:int((len(data)+1)*.80)]
-    test_data = data[int(len(data)*.80+1):]
-    train_labels = [data.split("---")[1] for data in train_data]
-    test_labels = [data.split("---")[1] for data in test_data]
+    train_labels = [data.split("-GENDER-")[1] for data in train_data]
+    test_labels = [data.split("-GENDER-")[1] for data in test_data]
 
 
     # Tokenizing & Filtering the text
@@ -35,18 +38,26 @@ else:
     # sublinear_tf=True, use sublinear weighting
     # use_idf=True, enable IDF
 
-    vectorizer = TfidfVectorizer(min_df=3,
-                             max_df = 0.8,
-                             sublinear_tf=True,
-                             use_idf=True)
-    train_vectors = vectorizer.fit_transform(train_data) # Create the vocabulary and the feature weights from the training data
-    test_vectors = vectorizer.transform(test_data) # Create the feature weights for the test data
+    vectorizer = TfidfVectorizer(min_df=5,
+                                 max_df=0.8,
+                                 sublinear_tf=True,
+                                 use_idf=True)
+    train_vectors = vectorizer.fit_transform(train_data)  # Create the vocabulary and the feature weights from the training data
+    test_vectors = vectorizer.transform(test_data)  # Create the feature weights for the test data
     print(len(train_labels))
+
     # Classification using SVM kernel=rbf
     classifier_rbf = svm.SVC()
     classifier_rbf.fit(train_vectors, train_labels)
     prediction_rbf = classifier_rbf.predict(test_vectors)
     print(classification_report(test_labels, prediction_rbf))
+
+    # Classification with SVM, kernel=linear
+    classifier_linear = svm.SVC(kernel='linear')
+    classifier_linear.fit(train_vectors, train_labels)
+    prediction_linear = classifier_linear.predict(test_vectors)
+    print(classification_report(test_labels, prediction_linear))
+
 
 
     # # Fit and Transform the data
@@ -54,5 +65,3 @@ else:
     # # X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
 
     # # Train the classifer using various methods
-
-
