@@ -5,6 +5,7 @@ from sklearn import svm
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report
@@ -16,6 +17,8 @@ import matplotlib.pyplot as plt
 
 import random
 import numpy as np
+
+import sys
 
 def convert_to_integer_gender(labels):
     labels_int = [0 if x == "MALE" else 1 for x in labels]
@@ -36,31 +39,27 @@ def convert_to_integer_age(labels):
             labels_int.append(4)
     return labels_int
 
-def classify_gender():
-    file = open("results-gender.txt","w")
+def classify_gender(vectorizer, vec_name, flag):
+    file = open("results-gender-"+vec_name+".txt","w")
     data = [db["Status"] + "-GENDER-" + db["Sex"] for db in db.collection.find()]
     
     random.seed(1234)  # randomizing data
 
     random.shuffle(data)
-    print("Training:\n")
-    train_data = data[:int(len(data) * .0016)]
-    test_data = data[int(len(data) * .0016):int(len(data) * .0020)]
-
+    print("Training "+vec_name+":\n")
+    
+    if flag:
+        train_data = data[:int(len(data) * .0016)]
+        test_data = data[int(len(data) * .0016):int(len(data) * .0020)]
+    else:
+        train_data = data[:int(len(data) * .8)]
+        test_data = data[int(len(data) * .8):]
+    
     train_labels = [data.split("-GENDER-")[1] for data in train_data]
     test_labels = [data.split("-GENDER-")[1] for data in test_data]
     train_data = [data.split("-GENDER-")[0] for data in train_data]
     test_data = [data.split("-GENDER-")[0] for data in test_data]
 
-    # Tokenizing & Filtering the text
-    # min_df=5, discard words appearing in less than 5 documents
-    # max_df=0.8, discard words appering in more than 80% of the documents
-    # sublinear_tf=True, use sublinear weighting
-    # use_idf=True, enable IDF
-    vectorizer = TfidfVectorizer(min_df=8,
-                                 max_df=0.8,
-                                 sublinear_tf=True,
-                                 use_idf=True)
     # Create the vocabulary and the feature weights from the training data
     train_vectors = vectorizer.fit_transform(train_data)
     # Create the feature weights for the test data
@@ -163,31 +162,33 @@ def classify_gender():
     print(classification_report(test_labels, prediction_knearest),"\n")
     file.write(classification_report(test_labels, prediction_knearest)+"\n")
     file.close()
-
     
-def classify_age():
-    #data = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find()]
-    #"""
-    file = open("results-age.txt","w")
+def classify_age(vectorizer, vec_name, flag):
     
-    data1824 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "18-24" } ).limit(600)]
+    if flag:
+        file = open("results-age-" + vec_name+".txt","w")
+        
+        data1824 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "18-24" } ).limit(600)]
 
-    data2534 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "25-34" } ).limit(600)]
+        data2534 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "25-34" } ).limit(600)]
 
-    data3549 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "35-49" } ).limit(600)]
+        data3549 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "35-49" } ).limit(600)]
 
-    data5064 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "50-64" } ).limit(600)]
+        data5064 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "50-64" } ).limit(600)]
 
-    data65xx = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "65-xx" } ).limit(600)]
+        data65xx = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "65-xx" } ).limit(600)]
 
-    data = data1824+data2534+data3549+data5064+data65xx
-    #"""
+        data = data1824+data2534+data3549+data5064+data65xx
+    
+    else:
+        data = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find()]
+    
 
     random.seed(1234)  # randomizing data
 
     random.shuffle(data)
 
-    print("Training:")
+    print("Training "+vec_name+":")
 
 
     temp_train_data = data[:int(len(data) * .8)]
@@ -208,15 +209,6 @@ def classify_age():
         test_data.append(temp[0])
         test_labels.append(temp[1])
 
-    # Tokenizing & Filtering the text
-    # min_df=5, discard words appearing in less than 5 documents
-    # max_df=0.8, discard words appering in more than 80% of the documents
-    # sublinear_tf=True, use sublinear weighting
-    # use_idf=True, enable IDF
-    vectorizer = TfidfVectorizer(min_df=8,
-                                 max_df=0.8,
-                                 sublinear_tf=True,
-                                 use_idf=True)
     
     # Create the vocabulary and the feature weights from the training data
     train_vectors = vectorizer.fit_transform(train_data)
@@ -290,17 +282,44 @@ def classify_age():
 
     file.close()
 
+def wrapper_call(flag):
+    # Tokenizing & Filtering the text
+    # min_df=5, discard words appearing in less than 5 documents
+    # max_df=0.8, discard words appering in more than 80% of the documents
+    # sublinear_tf=True, use sublinear weighting
+    # use_idf=True, enable IDF
+    tfidfVectorizer = TfidfVectorizer(min_df=8,
+                                 max_df=0.8,
+                                 sublinear_tf=True,
+                                 use_idf=True)
+    
+    countVectorizer = CountVectorizer(min_df=1)
+    
+    #Baseline
+    classify_gender(tfidfVectorizer, "tfidf", flag)
+    classify_age(tfidfVectorizer, "tfidf", flag)
+
+    #Count Vectorizer
+    classify_gender(countVectorizer, "count", flag)
+    classify_age(countVectorizer, "count", flag)
 
 client = MongoClient('localhost:27017', serverSelectionTimeoutMS=1000)
 
 db = client['user-details']
 collection = db['status']
 
+flag = False
+
+if len(sys.argv)==2:
+    flag = eval(sys.argv[1])  #Sample flag
+elif len(sys.argv)>2:
+    print("Invalid arguments")
+    sys.exit()
+
 if db.collection.count() < lookupTweets():
     db.collection.remove()
     insert()
-    classify_gender()
-    classify_age()
+    wrapper_call(flag)
 else:
-    classify_gender()
-    classify_age()
+    wrapper_call(flag)
+    
