@@ -14,6 +14,7 @@ def insert():
 
     s_no = 1
 
+    print("Loading data into MongoDB")
     for folder in folders:
         temp = folder.split('-')
         if len(temp) > 2:
@@ -25,11 +26,13 @@ def insert():
                 result = db.collection.insert_one(
                     {
                         "SNo": s_no,
-                        "StatusID": status_content,
-                        "Status": status,
+                        "StatusID": status,
+                        "Status": status_content,
                         "Age": temp[1] + '-' + temp[2],
                         "Sex": temp[0]
                     })
-                print(s_no)
+                if s_no%10000 == 0:
+                    print(".",end="")
                 s_no += 1
+    print()
     client.close()

@@ -1,0 +1,34 @@
+Multilabel OneVsRestClassifier
+             precision    recall  f1-score   support
+
+      18-24       0.48      0.54      0.51       114
+      25-34       0.43      0.44      0.44       117
+      35-49       0.47      0.46      0.46       121
+      50-64       0.70      0.66      0.68       135
+      65-xx       0.83      0.75      0.79       113
+
+avg / total       0.58      0.57      0.58       600
+
+Multinomial Naive Bayes
+             precision    recall  f1-score   support
+
+      18-24       0.42      0.51      0.46       114
+      25-34       0.42      0.39      0.41       117
+      35-49       0.47      0.45      0.46       121
+      50-64       0.69      0.62      0.65       135
+      65-xx       0.72      0.73      0.72       113
+
+avg / total       0.55      0.54      0.54       600
+
+Best Score for given dataset for KNearest Classifier - 0.44875
+Best Parameter for given dataset for KNearest Classifier - {'n_neighbors': 2}
+             precision    recall  f1-score   support
+
+      18-24       0.29      0.78      0.42       114
+      25-34       0.39      0.27      0.32       117
+      35-49       0.43      0.25      0.32       121
+      50-64       0.82      0.47      0.60       135
+      65-xx       0.95      0.54      0.69       113
+
+avg / total       0.58      0.46      0.47       600
+
