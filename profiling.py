@@ -15,8 +15,10 @@ from sklearn.svm import LinearSVC
 import pandas as pd
 import matplotlib.pyplot as plt
 
+import pickle
 import random
 import numpy as np
+import datetime
 
 import sys
 
@@ -40,29 +42,46 @@ def convert_to_integer_age(labels):
     return labels_int
 
 def classify_gender(vectorizer, vec_name, flag):
+    
     file = open("results-gender-"+vec_name+".txt","w")
     data = [db["Status"] + "-GENDER-" + db["Sex"] for db in db.collection.find()]
     
     random.seed(1234)  # randomizing data
 
     random.shuffle(data)
-    print("Training "+vec_name+":\n")
     
+    print("Training gender "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+
     if flag:
-        train_data = data[:int(len(data) * .0016)]
-        test_data = data[int(len(data) * .0016):int(len(data) * .0020)]
+        temp_train_data = data[:int(len(data) * .0016)]
+        temp_test_data = data[int(len(data) * .0016):int(len(data) * .0020)]
     else:
-        train_data = data[:int(len(data) * .8)]
-        test_data = data[int(len(data) * .8):]
+        temp_train_data = data[:int(len(data) * .8)]
+        temp_test_data = data[int(len(data) * .8):]
     
-    train_labels = [data.split("-GENDER-")[1] for data in train_data]
-    test_labels = [data.split("-GENDER-")[1] for data in test_data]
-    train_data = [data.split("-GENDER-")[0] for data in train_data]
-    test_data = [data.split("-GENDER-")[0] for data in test_data]
+    train_labels = []
+    train_data = []
+    test_labels = []
+    test_data = []
+
+    for item in temp_train_data:
+        temp = item.split("-GENDER-")
+        train_data.append(temp[0])
+        train_labels.append(temp[1])
+
+    for item in temp_test_data:
+        temp = item.split("-GENDER-")
+        test_data.append(temp[0])
+        test_labels.append(temp[1])
+
+    print("Fitting gender data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
 
     # Create the vocabulary and the feature weights from the training data
     train_vectors = vectorizer.fit_transform(train_data)
     # Create the feature weights for the test data
+    
+    print("Transforming gender data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+    
     test_vectors = vectorizer.transform(test_data)
 
     param_grid = [
@@ -71,13 +90,28 @@ def classify_gender(vectorizer, vec_name, flag):
     ]
 
     # Finding the Best Parameters
-    classifier_best = svm.SVC()
-    classifier_cv = GridSearchCV(classifier_best, param_grid, scoring='accuracy')
-    classifier_cv.fit(train_vectors, train_labels)
+    #classifier_best = svm.SVC()
+    #classifier_cv = GridSearchCV(classifier_best, param_grid, scoring='accuracy')
     
+    print("Fitting SVM gender data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+    
+    #classifier_cv.fit(train_vectors, train_labels)
+
     # Classification with SVM, kernel=linear is the best
     classifier_linear = svm.SVC(C=0.01, kernel='linear')
     classifier_linear.fit(train_vectors, train_labels)
+    
+    print("Dumping SVM gender data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+    
+    with open("svm-gender-"+vec_name+".pkl", 'wb') as f:
+        pickle.dump(classifier_linear, f)
+
+    print("Loading SVM gender data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+    
+    with open("svm-gender-"+vec_name+".pkl", 'rb') as f:
+        classifier_linear = pickle.load(f)
+
+    print("Predicting SVM gender data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
     prediction_linear = classifier_linear.predict(test_vectors)
  
     print("Best Score for given dataset for SVM Classifier - ", classifier_cv.best_score_,"\n")
@@ -118,7 +152,20 @@ def classify_gender(vectorizer, vec_name, flag):
     # Classification with Naive Bayes
 
     classifier_nb = MultinomialNB()
+    
+    print("Fitting NB gender data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+    
     classifier_nb.fit(train_vectors, train_labels)
+
+    print("Dumping NB gender data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+    with open("nb-gender-"+vec_name+".pkl", 'wb') as f:
+        pickle.dump(classifier_nb, f)
+
+    print("Loading NB gender data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+    with open("nb-gender-"+vec_name+".pkl", 'rb') as f:
+        classifier_nb = pickle.load(f)
+
+    print("Predicting NB gender result "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
     prediction_nb = classifier_nb.predict(test_vectors)
     
     print(classification_report(test_labels, prediction_nb),"\n")
@@ -142,7 +189,7 @@ def classify_gender(vectorizer, vec_name, flag):
     # plt.ylabel("accuracy")
     # plt.show()
 
-
+    """
     # Finding the best parameters
     k = np.arange(20) + 1
     parameters = {'n_neighbors': k}
@@ -161,6 +208,8 @@ def classify_gender(vectorizer, vec_name, flag):
     
     print(classification_report(test_labels, prediction_knearest),"\n")
     file.write(classification_report(test_labels, prediction_knearest)+"\n")
+    """
+
     file.close()
     
 def classify_age(vectorizer, vec_name, flag):
@@ -188,8 +237,7 @@ def classify_age(vectorizer, vec_name, flag):
 
     random.shuffle(data)
 
-    print("Training "+vec_name+":")
-
+    print("Training age "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
 
     temp_train_data = data[:int(len(data) * .8)]
     temp_test_data = data[int(len(data) * .8):]
@@ -211,8 +259,14 @@ def classify_age(vectorizer, vec_name, flag):
 
     
     # Create the vocabulary and the feature weights from the training data
+    
+    print("Fitting age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+
     train_vectors = vectorizer.fit_transform(train_data)
     # Create the feature weights for the test data
+    
+    print("Transforming age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+
     test_vectors = vectorizer.transform(test_data)
 
     param_grid = [
@@ -220,12 +274,24 @@ def classify_age(vectorizer, vec_name, flag):
         {'C': [0.01, 0.1, 1, 10, 50, 100, 500, 1000], 'gamma': [0.001, 0.0001], 'kernel': ['rbf']},
     ]
 
-    mlb = MultiLabelBinarizer()
-    train_labels_multi = mlb.fit_transform(train_labels)
-    test_labels_multi = mlb.fit_transform(test_labels)
+    print("Fitting SVM age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
 
     classifier_linear = OneVsRestClassifier(LinearSVC(random_state=0))
-    prediction_linear = classifier_linear.fit(train_vectors, train_labels).predict(test_vectors)
+    classifier_linear.fit(train_vectors, train_labels)
+
+    print("Dumping SVM age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+
+    with open("svm-age-"+vec_name+".pkl", 'wb') as f:
+        pickle.dump(classifier_linear, f)
+
+    print("Loading SVM age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+
+    with open("svm-age-"+vec_name+".pkl", 'rb') as f:
+        classifier_linear = pickle.load(f)
+
+    print("Predicting SVM age result "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+
+    prediction_linear = classifier_linear.predict(test_vectors)
 
     print("Multilabel OneVsRestClassifier")
     file.write("Multilabel OneVsRestClassifier"+"\n")
@@ -251,8 +317,23 @@ def classify_age(vectorizer, vec_name, flag):
 
     # Classification with Naive Bayes
 
+    print("Fitting NB age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+
     classifier_nb = MultinomialNB()
     classifier_nb.fit(train_vectors, train_labels)
+    
+    print("Dumping NB age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+
+    with open("nb-age-"+vec_name+".pkl", 'wb') as f:
+        pickle.dump(classifier_nb, f)
+
+    print("Loading SVM age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+
+    with open("nb-age-"+vec_name+".pkl", 'rb') as f:
+        classifier_nb = pickle.load(f)
+
+    print("Predicting NB age result "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+
     prediction_nb = classifier_nb.predict(test_vectors)
 
     print("Multinomial Naive Bayes")
@@ -260,7 +341,7 @@ def classify_age(vectorizer, vec_name, flag):
 
     print(classification_report(test_labels, prediction_nb))
     file.write(str(classification_report(test_labels, prediction_nb))+"\n")
-
+    """
     # Finding the best parameters
     k = np.arange(20) + 1
     parameters = {'n_neighbors': k}
@@ -279,7 +360,8 @@ def classify_age(vectorizer, vec_name, flag):
     prediction_knearest = classifier_knearest.predict(test_vectors)
     print(classification_report(test_labels, prediction_knearest))
     file.write(str(classification_report(test_labels, prediction_knearest))+"\n")
-
+    """
+    
     file.close()
 
 def wrapper_call(flag):

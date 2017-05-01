@@ -20,15 +20,3 @@ Multinomial Naive Bayes
 
 avg / total       0.55      0.54      0.54       600
 
-Best Score for given dataset for KNearest Classifier - 0.44875
-Best Parameter for given dataset for KNearest Classifier - {'n_neighbors': 2}
-             precision    recall  f1-score   support
-
-      18-24       0.29      0.78      0.42       114
-      25-34       0.39      0.27      0.32       117
-      35-49       0.43      0.25      0.32       121
-      50-64       0.82      0.47      0.60       135
-      65-xx       0.95      0.54      0.69       113
-
-avg / total       0.58      0.46      0.47       600
-
