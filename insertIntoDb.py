@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 import os
 
-
+# Insert into Database
 def insert():
     client = MongoClient('localhost:27017', serverSelectionTimeoutMS=1000)
 
