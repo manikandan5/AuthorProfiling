@@ -12,6 +12,9 @@ from sklearn.metrics import classification_report
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import LinearSVC
+from sklearn.ensemble import BaggingClassifier
+from sklearn.svm import SVC
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -98,7 +101,10 @@ def classify_gender(vectorizer, vec_name, flag):
     #classifier_cv.fit(train_vectors, train_labels)
 
     # Classification with SVM, kernel=linear is the best
-    classifier_linear = svm.SVC(C=0.01, kernel='linear')
+    #classifier_linear = svm.SVC(C=0.01, kernel='linear')
+    #classifier_linear.fit(train_vectors, train_labels)
+    n_estimators = 10
+    classifier_linear = OneVsRestClassifier(BaggingClassifier(SVC(kernel='linear', probability=True, class_weight='balanced'), max_samples=1.0 / n_estimators, n_estimators=n_estimators))
     classifier_linear.fit(train_vectors, train_labels)
     
     print("Dumping SVM gender data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
@@ -114,24 +120,24 @@ def classify_gender(vectorizer, vec_name, flag):
     print("Predicting SVM gender data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
     prediction_linear = classifier_linear.predict(test_vectors)
  
-    print("Best Score for given dataset for SVM Classifier - ", classifier_cv.best_score_,"\n")
-    print("Best Parameter for given dataset for SVM Classifier - ", classifier_cv.best_params_,"\n")
-    file.write("Best Score for given dataset for SVM Classifier - " + str(classifier_cv.best_score_) +"\n")
-    file.write("Best Parameter for given dataset for SVM Classifier - " + str(classifier_cv.best_params_) +"\n")
+    #print("Best Score for given dataset for SVM Classifier - ", classifier_cv.best_score_,"\n")
+    #print("Best Parameter for given dataset for SVM Classifier - ", classifier_cv.best_params_,"\n")
+    #file.write("Best Score for given dataset for SVM Classifier - " + str(classifier_cv.best_score_) +"\n")
+    #file.write("Best Parameter for given dataset for SVM Classifier - " + str(classifier_cv.best_params_) +"\n")
     
     print(classification_report(test_labels, prediction_linear),"\n")
     file.write(classification_report(test_labels, prediction_linear)+"\n")
     
     # Plotting the data for different values of C
-    def rmse_cv(model):
-        rmse = np.sqrt(cross_val_score(classifier_linear, train_vectors, train_labels, scoring='accuracy', cv=5))
-        return (rmse)
-    train_labels_int = convert_to_integer_gender(train_labels)
-    c_lst = [0.01, 0.1, 1, 10, 50, 100, 500, 1000]
-    crossval_ridge = [np.mean(rmse_cv(classifier_linear)) for x in c_lst]
+    #def rmse_cv(model):
+    #    rmse = np.sqrt(cross_val_score(classifier_linear, train_vectors, train_labels, scoring='accuracy', cv=5))
+    #    return (rmse)
+    #train_labels_int = convert_to_integer_gender(train_labels)
+    #c_lst = [0.01, 0.1, 1, 10, 50, 100, 500, 1000]
+    #crossval_ridge = [np.mean(rmse_cv(classifier_linear)) for x in c_lst]
     
-    crossval_ridge = pd.Series(crossval_ridge, index=c_lst)
-    crossval_ridge.plot(title="Validation")
+    #crossval_ridge = pd.Series(crossval_ridge, index=c_lst)
+    #crossval_ridge.plot(title="Validation")
     #plt.xlabel("c_values")
     #plt.ylabel("accuracy")
     #plt.show()
@@ -151,7 +157,9 @@ def classify_gender(vectorizer, vec_name, flag):
 
     # Classification with Naive Bayes
 
-    classifier_nb = MultinomialNB()
+    #classifier_nb = MultinomialNB()
+    classifier_nb = BaggingClassifier(MultinomialNB(),max_samples=0.5, max_features=0.5)
+    classifier_nb.fit(train_vectors, train_labels)
     
     print("Fitting NB gender data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
     
@@ -214,8 +222,9 @@ def classify_gender(vectorizer, vec_name, flag):
     
 def classify_age(vectorizer, vec_name, flag):
     
+    file = open("results-age-" + vec_name+".txt","w")
+        
     if flag:
-        file = open("results-age-" + vec_name+".txt","w")
         
         data1824 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "18-24" } ).limit(600)]
 
@@ -276,14 +285,19 @@ def classify_age(vectorizer, vec_name, flag):
 
     print("Fitting SVM age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
 
-    classifier_linear = OneVsRestClassifier(LinearSVC(random_state=0))
-    classifier_linear.fit(train_vectors, train_labels)
+    #classifier_linear = OneVsRestClassifier(LinearSVC(random_state=0))
+    #classifier_linear.fit(train_vectors, train_labels)
 
+    
+    n_estimators = 10
+    classifier_linear = OneVsRestClassifier(BaggingClassifier(SVC(kernel='linear', probability=True, class_weight='balanced'), max_samples=1.0 / n_estimators, n_estimators=n_estimators))
+    classifier_linear.fit(train_vectors, train_labels)
+    
     print("Dumping SVM age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
 
     with open("svm-age-"+vec_name+".pkl", 'wb') as f:
         pickle.dump(classifier_linear, f)
-
+    
     print("Loading SVM age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
 
     with open("svm-age-"+vec_name+".pkl", 'rb') as f:
@@ -291,8 +305,9 @@ def classify_age(vectorizer, vec_name, flag):
 
     print("Predicting SVM age result "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
 
+    #prediction_linear = classifier_linear.predict(test_vectors)
     prediction_linear = classifier_linear.predict(test_vectors)
-
+    
     print("Multilabel OneVsRestClassifier")
     file.write("Multilabel OneVsRestClassifier"+"\n")
 
@@ -300,34 +315,34 @@ def classify_age(vectorizer, vec_name, flag):
     file.write(str(classification_report(test_labels, prediction_linear))+"\n")
 
     # Plotting the data for different values of C
-    def rmse_cv(model):
-        rmse = np.sqrt(cross_val_score(classifier_linear, train_vectors, train_labels, scoring='accuracy', cv=5))
-        return (rmse)
+    #def rmse_cv(model):
+    #    rmse = np.sqrt(cross_val_score(classifier_linear, train_vectors, train_labels, scoring='accuracy', cv=5))
+    #    return (rmse)
 
-    train_labels_int = convert_to_integer_age(train_labels)
-    c_lst = [0.01, 0.1, 1, 10, 50, 100, 500, 1000]
-    crossval_ridge = [np.mean(rmse_cv(classifier_linear)) for x in c_lst]
+    #train_labels_int = convert_to_integer_age(train_labels)
+    #c_lst = [0.01, 0.1, 1, 10, 50, 100, 500, 1000]
+    #crossval_ridge = [np.mean(rmse_cv(classifier_linear)) for x in c_lst]
     
-    crossval_ridge = pd.Series(crossval_ridge, index=c_lst)
-    crossval_ridge.plot(title="Validation")
+    #crossval_ridge = pd.Series(crossval_ridge, index=c_lst)
+    #crossval_ridge.plot(title="Validation")
 
     #plt.xlabel("c_values")
     #plt.ylabel("accuracy")
     #plt.show()
 
     # Classification with Naive Bayes
-
+    
     print("Fitting NB age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
 
-    classifier_nb = MultinomialNB()
+    classifier_nb = BaggingClassifier(MultinomialNB(),max_samples=0.5, max_features=0.5)
     classifier_nb.fit(train_vectors, train_labels)
     
     print("Dumping NB age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
 
     with open("nb-age-"+vec_name+".pkl", 'wb') as f:
         pickle.dump(classifier_nb, f)
-
-    print("Loading SVM age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
+    
+    print("Loading NB age data "+vec_name+" started - "+ str(datetime.datetime.now().time()) + "\n")
 
     with open("nb-age-"+vec_name+".pkl", 'rb') as f:
         classifier_nb = pickle.load(f)

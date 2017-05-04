@@ -1,0 +1,14 @@
+             precision    recall  f1-score   support
+
+     FEMALE       0.73      0.69      0.71     20464
+       MALE       0.76      0.80      0.78     25873
+
+avg / total       0.75      0.75      0.75     46337
+
+             precision    recall  f1-score   support
+
+     FEMALE       0.86      0.52      0.65     20464
+       MALE       0.71      0.93      0.81     25873
+
+avg / total       0.78      0.75      0.74     46337
+
