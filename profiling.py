@@ -226,15 +226,15 @@ def classify_age(vectorizer, vec_name, flag):
         
     if flag:
         
-        data1824 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "18-24" } ).limit(600)]
+        data1824 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "18-24" } ).limit(1800)]
 
-        data2534 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "25-34" } ).limit(600)]
+        data2534 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "25-34" } ).limit(1800)]
 
-        data3549 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "35-49" } ).limit(600)]
+        data3549 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "35-49" } ).limit(1800)]
 
-        data5064 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "50-64" } ).limit(600)]
+        data5064 = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "50-64" } ).limit(1800)]
 
-        data65xx = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "65-xx" } ).limit(600)]
+        data65xx = [db["Status"] + "-AGE-" + db["Age"] for db in db.collection.find( { "Age": "65-xx" } ).limit(1800)]
 
         data = data1824+data2534+data3549+data5064+data65xx
     
